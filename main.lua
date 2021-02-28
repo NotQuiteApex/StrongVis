@@ -59,7 +59,7 @@ function love.load()
 			lg.line(-canvhalf + x*16, -canvhalf, -canvhalf + x*16, canvhalf)
 		end
 
-		lg.setColor(0, 1, 0)
+		lg.setColor(1, 0, 0)
 		for y = 0, tilenum/10 do
 			lg.line(-canvhalf, -canvhalf + y*16*10-8*10, canvhalf, -canvhalf + y*16*10-8*10)
 		end
@@ -68,7 +68,7 @@ function love.load()
 		end
 
 		-- main lines
-		lg.setColor(1, 0, 0)
+		lg.setColor(0, 1, 0)
 		lg.line(-canvhalf,0, canvhalf,0)
 		lg.line(0,-canvhalf, 0,canvhalf)
 		lg.pop()
@@ -80,6 +80,10 @@ function love.update(dt)
 end
 
 function love.draw()
+	local fnt = lg.getFont()
+
+	lg.setScissor(0,0, sysW, sysH)
+
 	lg.push()
 	lg.translate(sysW/2, sysH/2)
 	lg.scale(zoom, zoom)
@@ -94,7 +98,27 @@ function love.draw()
 		end
 	end
 
+	lg.setColor(0, 1, 1)
+	for y = 0, tilenum/10-1 do
+		local ystr = (y-(tilenum/10-1)/2)*10
+		local w, h = fnt:getWidth(ystr), fnt:getHeight(ystr)
+		for x = 0, tilenum/10 do
+			lg.print(ystr, -canvhalf + x*10*16, -canvhalf + y*10*16+4.5*16, 0, 1,1, w/2)
+		end
+	end
+	lg.setColor(1,1,0)
+	for x = 0, tilenum/10-1 do
+		local xstr = (x-(tilenum/10-1)/2)*10
+		local w, h = fnt:getWidth(xstr), fnt:getHeight(xstr)
+		for y = 0, tilenum/10 do
+			lg.print(xstr, -canvhalf + (x-1)*10*16+15*16, -canvhalf + y*10*16-8, 0, 1,1, w/2)
+		end
+	end
+	lg.setColor(1,1,1)
+
 	lg.pop()
+
+	lg.setScissor()
 
 	for i=1,2 do
 		if cmdstr[i] then
@@ -111,7 +135,6 @@ function love.draw()
 	lg.print("Angle:"..math.deg(ang), 0, 96)
 
 	lg.setColor(1,1,1)
-	local fnt = lg.getFont()
 	local str = "Controls:\nMouse1 to idk\nMouse 2 to pan\nMouseWheel to zoom"
 	lg.printf(str, sysW-2, sysH, sysW, "right", 0, 1, 1, sysW, 58)
 
@@ -159,8 +182,8 @@ function love.keypressed(k)
 end
 
 function love.resize(w, h)
-	sysW = w
-	sysH = h
+	sysW = math.floor(w/2)*2
+	sysH = math.floor(h/2)*2
 end
 
 function love.mousemoved(x,y, dx,dy, istouch)
