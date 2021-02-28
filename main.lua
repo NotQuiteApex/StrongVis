@@ -15,6 +15,7 @@ local lt = love.timer
 
 function love.load()
 	lg.setLineStyle("rough")
+	lk.setKeyRepeat(true)
 
 	cmdstr = {
 		state = 1
@@ -62,7 +63,7 @@ function love.load()
 end
 
 function love.update(dt)
-
+	lg.setLineWidth(1/zoom)
 end
 
 function love.draw()
@@ -73,14 +74,24 @@ function love.draw()
 
 	lg.draw(canv, -2048, -2048)
 
+	for i=1,2 do
+		if cmdstr[i] then
+			local x, y = cmdstr[i].x - originx, cmdstr[i].z - originz
+			lg.line(x, y, x+5000*math.cos(cmdstr[i].rad), y-5000*math.sin(cmdstr[i].rad))
+		end
+	end
+
 	lg.pop()
 
 	for i=1,2 do
 		if cmdstr[i] then
-			local str = "{ x=%d, z=%d, ang=%d }"
+			local str = "{ x=%.2f, z=%.2f, ang=%.2f }"
 			lg.print(str:format(cmdstr[i].x,cmdstr[i].z,cmdstr[i].ang), 0, 16*i)
 		end
 	end
+
+	lg.print("mx:"..(lm.getX()-sysW/2)/zoom-camerax, 0, 64)
+	lg.print("my:"..(lm.getY()-sysH/2)/zoom-cameray, 0, 80)
 
 	lg.setColor(1,1,1)
 	local fnt = lg.getFont()
@@ -101,14 +112,16 @@ function love.keypressed(k)
 
 			local v = {}
 			for cap in txt:gmatch("(%-?%d*%.?%d+)") do
-				v[#v+1] = tonumber(cap)
+				local n = tonumber(cap)
+				if not n then return end
+				v[#v+1] = n
 			end
 
 			if #v ~= 5 then
 				return -- error, not enough numbers
 			end
 
-			cmdstr[cmdstr.state] = {x=v[1], z=v[3], ang=v[4] % 360}
+			cmdstr[cmdstr.state] = {x=v[1], z=v[3], ang=v[4] % 360, rad=math.rad(v[4] % 360)}
 			if cmdstr.state == 1 then
 				originx = v[1]
 				originz = v[3]
@@ -116,6 +129,10 @@ function love.keypressed(k)
 
 			cmdstr.state = cmdstr.state + 1
 		end
+	elseif k == "up" then    lm.setY(lm.getY() - 1)
+	elseif k == "down" then  lm.setY(lm.getY() + 1)
+	elseif k == "left" then  lm.setX(lm.getX() - 1)
+	elseif k == "right" then lm.setX(lm.getX() + 1)
 	elseif k == "`" then
 		le.quit("restart")
 	elseif k == "escape" then
