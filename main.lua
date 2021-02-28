@@ -98,20 +98,29 @@ function love.draw()
 		end
 	end
 
+	local xcoord, ycoord
 	lg.setColor(0, 1, 1)
 	for y = 0, tilenum/10-1 do
 		local ystr = (y-(tilenum/10-1)/2)*10
 		local w, h = fnt:getWidth(ystr), fnt:getHeight(ystr)
-		for x = 0, tilenum/10 do
-			lg.print(ystr, -canvhalf + x*10*16, -canvhalf + y*10*16+4.5*16, 0, 1,1, w/2)
+		ycoord = -canvhalf + y*10*16+4.5*16
+		if -ycoord >= cameray - sysH/2/zoom and -ycoord <= cameray + sysH/2/zoom then
+			for x = 0, tilenum/10 do
+				xcoord = -canvhalf + x*10*16
+				lg.print(ystr, xcoord, ycoord, 0, 1,1, w/2)
+			end
 		end
 	end
 	lg.setColor(1,1,0)
 	for x = 0, tilenum/10-1 do
 		local xstr = (x-(tilenum/10-1)/2)*10
 		local w, h = fnt:getWidth(xstr), fnt:getHeight(xstr)
-		for y = 0, tilenum/10 do
-			lg.print(xstr, -canvhalf + (x-1)*10*16+15*16, -canvhalf + y*10*16-8, 0, 1,1, w/2)
+		xcoord = -canvhalf + (x-1)*10*16+15*16
+		if -xcoord >= camerax - sysW/2/zoom and -xcoord <= camerax + sysW/2/zoom then
+			for y = 0, tilenum/10 do
+				ycoord = -canvhalf + y*10*16-8
+				lg.print(xstr, xcoord, ycoord, 0, 1,1, w/2)
+			end
 		end
 	end
 	lg.setColor(1,1,1)
@@ -130,12 +139,12 @@ function love.draw()
 	local x = (lm.getX()-sysW/2)/zoom-camerax
 	local y = (lm.getY()-sysH/2)/zoom-cameray
 	local ang = math.atan2(y, x)
-	lg.print("X:"..x, 0, 64)
-	lg.print("Y:"..y, 0, 80)
-	lg.print("Angle:"..math.deg(ang), 0, 96)
+	lg.print(("X:%.2f"):format(x), 0, 64)
+	lg.print(("Y:%.2f"):format(y), 0, 80)
+	lg.print(("Angle:%.2f"):format(math.deg(ang)), 0, 96)
 
 	lg.setColor(1,1,1)
-	local str = "Controls:\nMouse1 to idk\nMouse 2 to pan\nMouseWheel to zoom"
+	local str = "Controls:\nArrow keys to move cursor\nMouse 2 to pan\nMouseWheel to zoom"
 	lg.printf(str, sysW-2, sysH, sysW, "right", 0, 1, 1, sysW, 58)
 
 	lg.print("fps:"..lt.getFPS(), 0,0)
