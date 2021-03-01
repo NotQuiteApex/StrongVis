@@ -1,9 +1,13 @@
 -- FourCalc, calculator for Four's MC Speedruns
 
 -- NOTES:
--- `/execute in minecraft:overworld run tp @s -1220.22 36.00 -923.30 10076.11 38.27`
+-- `/execute in minecraft:overworld run tp @s -1220.22 36.00 -923.30 -10076.11 38.27`
 -- `/execute in minecraft:overworld run tp @s -1220.22 36.00 -1000.00 0.00 38.27`
 -- X, Y, Z, Yaw, Pitch (ignore Y and Pitch, only use X, Z, Yaw)
+-- South: +Z (0 deg)
+-- North: -Z (90 deg)
+-- West:  -X (-90 deg)
+-- East:  +X (180/-180 deg)
 
 io.stdout:setvbuf("no")
 
@@ -13,6 +17,16 @@ local lg = love.graphics
 local lm = love.mouse
 local ls = love.system
 local lt = love.timer
+
+local controlsstr = [[Controls:
+Arrow keys to move cursor
+Mouse 2 to pan view
+MouseWheel to zoom
+~ to restart app
+Escape to exit
+Ctrl+Z to undo last line
+Ctrl+V to paste MC's F3+C
+]]
 
 function love.load()
 	lg.setLineStyle("rough")
@@ -100,7 +114,7 @@ function love.draw()
 
 	local mx = (lm.getX()-sysW/2)/zoom-camerax
 	local my = (lm.getY()-sysH/2)/zoom-cameray
-	local mang = math.atan2(my, mx)
+	local mang = math.atan2(mx-originx, -my-originz)
 
 	lg.setScissor(0,0, sysW, sysH)
 
@@ -161,13 +175,14 @@ function love.draw()
 		end
 	end
 
-	lg.print(("X:%.2f"):format(mx), 0, 64)
-	lg.print(("Y:%.2f"):format(my), 0, 80)
-	lg.print(("Angle:%.2f"):format(math.deg(mang)), 0, 96)
+	lg.print(("X:        %.2f"):format(mx), 0, 64)
+	lg.print(("Y:        %.2f"):format(my), 0, 80)
+	lg.print(("Angle:   %.2f"):format(math.deg(mang)), 0, 96)
+	lg.print(("OriginX: %.1f"):format(originx), 0, 112)
+	lg.print(("OriginY: %.1f"):format(originz), 0, 128)
 
 	lg.setColor(1,1,1)
-	local str = "Controls:\nArrow keys to move cursor\nMouse 2 to pan\nMouseWheel to zoom"
-	lg.printf(str, sysW-2, sysH, sysW, "right", 0, 1, 1, sysW, 58)
+	lg.printf(controlsstr, sysW-2, sysH, sysW, "right", 0, 1, 1, sysW, 96)
 
 	lg.print("fps:"..lt.getFPS(), 0,0)
 
@@ -197,7 +212,9 @@ function love.keypressed(k)
 				return -- error, not enough numbers
 			end
 
-			local ang = v[4]%360
+			print(v[4])
+			-- normalize angle between -180 and 180
+			local ang = v[4] - 180 * math.floor((v[4] + 180) / 180);
 			cmdstr[cmdstr.state] = {x=v[1], z=v[3], ang=ang, rad=math.rad(ang)}
 			if cmdstr.state == 1 then
 				--originx = v[1]
@@ -209,6 +226,22 @@ function love.keypressed(k)
 
 			cmdstr.state = cmdstr.state + 1
 		end
+	elseif k == "z" and lk.isDown("lctrl","rctrl") then
+		-- undo last paste and line.
+		if linestate == "second" or #lines == 2 or #cmdstr == 2 then
+			originx = 0
+			originz = 0
+			linestate = "none"
+			table.remove(lines, 2)
+			cmdstr.state = 2
+			table.remove(cmdstr, 2)
+		elseif linestate == "first" or #lines == 1 or #cmdstr == 1 then
+			linestate = "none"
+			table.remove(lines, 1)
+			cmdstr.state = 1
+			table.remove(cmdstr, 1)
+		end
+
 	elseif k == "up" then    lm.setY(lm.getY() - math.max(16*(zoom-1),1))
 	elseif k == "down" then  lm.setY(lm.getY() + math.max(16*(zoom-1),1))
 	elseif k == "left" then  lm.setX(lm.getX() - math.max(16*(zoom-1),1))
@@ -251,4 +284,8 @@ function love.mousereleased(x, y, b)
 			linestate = "none"
 		end
 	end
+end
+
+function sign(x)
+	return x < 0 and -1 or 1
 end
