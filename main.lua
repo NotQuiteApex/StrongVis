@@ -5,9 +5,14 @@
 -- `/execute in minecraft:overworld run tp @s -1220.22 36.00 -1000.00 0.00 38.27`
 -- X, Y, Z, Yaw, Pitch (ignore Y and Pitch, only use X, Z, Yaw)
 -- South: +Z (0 deg)
--- North: -Z (90 deg)
+-- North: -Z (180/-180 deg)
 -- West:  -X (-90 deg)
--- East:  +X (180/-180 deg)
+-- East:  +X (90 deg)
+
+-- TODO:
+-- Dot to guide line instead of angle
+-- chunk coords on pink Dot on click
+-- 
 
 io.stdout:setvbuf("no")
 
@@ -114,7 +119,7 @@ function love.draw()
 
 	local mx = (lm.getX()-sysW/2)/zoom-camerax
 	local my = (lm.getY()-sysH/2)/zoom-cameray
-	local mang = math.atan2(mx-originx, -my-originz)
+	local mang = math.atan2(mx-originx, my-originz)
 
 	lg.setScissor(0,0, sysW, sysH)
 
@@ -160,6 +165,17 @@ function love.draw()
 			end
 		end
 	end
+
+	lg.setColor(1,1,1, 0.25)
+
+	if zoom >= 5 then
+		for y = 0, sysH/zoom+1 do
+			for x = 0, sysW/zoom+1 do
+				lg.rectangle("line", math.floor(-camerax + x-sysW/zoom/2), math.floor(-cameray + y-sysH/zoom/2), 1,1)
+			end
+		end
+	end
+
 	lg.setColor(1,1,1)
 	lg.circle("line", math.floor(mx)+0.5, math.floor(my)+0.5, 2)
 	lg.rectangle("line", math.floor(mx), math.floor(my), 1,1)
@@ -212,7 +228,7 @@ function love.keypressed(k)
 				return -- error, not enough numbers
 			end
 
-			print(v[4])
+			v[4] = v[4] + 180
 			-- normalize angle between -180 and 180
 			local ang = v[4] - 180 * math.floor((v[4] + 180) / 180);
 			cmdstr[cmdstr.state] = {x=v[1], z=v[3], ang=ang, rad=math.rad(ang)}
@@ -232,12 +248,14 @@ function love.keypressed(k)
 			originx = 0
 			originz = 0
 			linestate = "none"
-			table.remove(lines, 2)
+			table.remove(lines, "second")
 			cmdstr.state = 2
 			table.remove(cmdstr, 2)
 		elseif linestate == "first" or #lines == 1 or #cmdstr == 1 then
+			originx = 0
+			originz = 0
 			linestate = "none"
-			table.remove(lines, 1)
+			table.remove(lines, "first")
 			cmdstr.state = 1
 			table.remove(cmdstr, 1)
 		end
