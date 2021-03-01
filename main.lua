@@ -103,8 +103,8 @@ function love.update(dt)
 	lg.setLineWidth(1/zoom)
 
 	if linestate ~= "none" and lm.isDown(1) then
-		local mx = math.floor((lm.getX()-sysW/2)/zoom-camerax)
-		local my = math.floor((lm.getY()-sysH/2)/zoom-cameray)
+		local mx = (lm.getX()-sysW/2)/zoom-camerax
+		local my = (lm.getY()-sysH/2)/zoom-cameray
 		local mang = math.atan2(my-originz, mx-originx)
 
 		if not lines[linestate] then lines[linestate] = {} end
@@ -130,14 +130,16 @@ function love.draw()
 
 	lg.draw(canv, -canvhalf, -canvhalf)
 
-	local x,y
+	local x,y, a,b
 	for k,v in pairs(lines) do
 		if k == "first" then
-			x, y = 0,0
+			x, y = -0.5,-0.5
+			a, b = 0, 0
 		else
 			x, y = originx,originz --lines[k].x, lines[k].z
+			a, b = x, y
 		end
-		lg.line(x, y, x+5000*math.cos(lines[k].rad), y+5000*math.sin(lines[k].rad))
+		lg.line(x, y, a+5000*math.cos(lines[k].rad), b+5000*math.sin(lines[k].rad))
 	end
 
 	local xcoord, ycoord
@@ -248,14 +250,14 @@ function love.keypressed(k)
 			originx = 0
 			originz = 0
 			linestate = "none"
-			table.remove(lines, "second")
+			lines["second"] = nil --table.remove(lines, "second")
 			cmdstr.state = 2
 			table.remove(cmdstr, 2)
 		elseif linestate == "first" or #lines == 1 or #cmdstr == 1 then
 			originx = 0
 			originz = 0
 			linestate = "none"
-			table.remove(lines, "first")
+			lines["first"] = nil --table.remove(lines, "first")
 			cmdstr.state = 1
 			table.remove(cmdstr, 1)
 		end
