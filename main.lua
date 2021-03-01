@@ -33,6 +33,11 @@ function love.load()
 	canvsize = tilenum*16
 	canvhalf = canvsize/2
 
+	linestate = "none" -- "none", "first", "second"
+	lines = {
+
+	}
+
 	lg.setDefaultFilter("linear", "nearest")
 	canv = lg.newCanvas(canvsize, canvsize)
 
@@ -77,10 +82,25 @@ end
 
 function love.update(dt)
 	lg.setLineWidth(1/zoom)
+
+	if linestate ~= "none" and lm.isDown(1) then
+		local mx = math.floor((lm.getX()-sysW/2)/zoom-camerax)
+		local my = math.floor((lm.getY()-sysH/2)/zoom-cameray)
+		local mang = math.atan2(my-originz, mx-originx)
+
+		if not lines[linestate] then lines[linestate] = {} end
+		lines[linestate].x = mx
+		lines[linestate].z = my
+		lines[linestate].rad = mang
+	end
 end
 
 function love.draw()
 	local fnt = lg.getFont()
+
+	local mx = (lm.getX()-sysW/2)/zoom-camerax
+	local my = (lm.getY()-sysH/2)/zoom-cameray
+	local mang = math.atan2(my, mx)
 
 	lg.setScissor(0,0, sysW, sysH)
 
@@ -91,11 +111,14 @@ function love.draw()
 
 	lg.draw(canv, -canvhalf, -canvhalf)
 
-	for i=1,2 do
-		if cmdstr[i] then
-			local x, y = cmdstr[i].x - originx, cmdstr[i].z - originz
-			lg.line(x, y, x+5000*math.cos(cmdstr[i].rad), y+5000*math.sin(cmdstr[i].rad))
+	local x,y
+	for k,v in pairs(lines) do
+		if k == "first" then
+			x, y = 0,0
+		else
+			x, y = originx,originz --lines[k].x, lines[k].z
 		end
+		lg.line(x, y, x+5000*math.cos(lines[k].rad), y+5000*math.sin(lines[k].rad))
 	end
 
 	local xcoord, ycoord
@@ -124,6 +147,8 @@ function love.draw()
 		end
 	end
 	lg.setColor(1,1,1)
+	lg.circle("line", math.floor(mx)+0.5, math.floor(my)+0.5, 2)
+	lg.rectangle("line", math.floor(mx), math.floor(my), 1,1)
 
 	lg.pop()
 
@@ -136,18 +161,20 @@ function love.draw()
 		end
 	end
 
-	local x = (lm.getX()-sysW/2)/zoom-camerax
-	local y = (lm.getY()-sysH/2)/zoom-cameray
-	local ang = math.atan2(y, x)
-	lg.print(("X:%.2f"):format(x), 0, 64)
-	lg.print(("Y:%.2f"):format(y), 0, 80)
-	lg.print(("Angle:%.2f"):format(math.deg(ang)), 0, 96)
+	lg.print(("X:%.2f"):format(mx), 0, 64)
+	lg.print(("Y:%.2f"):format(my), 0, 80)
+	lg.print(("Angle:%.2f"):format(math.deg(mang)), 0, 96)
 
 	lg.setColor(1,1,1)
 	local str = "Controls:\nArrow keys to move cursor\nMouse 2 to pan\nMouseWheel to zoom"
 	lg.printf(str, sysW-2, sysH, sysW, "right", 0, 1, 1, sysW, 58)
 
 	lg.print("fps:"..lt.getFPS(), 0,0)
+
+	if linestate ~= "none" then
+		local str = "Draw the "..linestate.." line."
+		lg.print(str, sysW/2-fnt:getWidth(str), sysH-32, 0, 2,2)
+	end
 end
 
 function love.keypressed(k)
@@ -173,16 +200,19 @@ function love.keypressed(k)
 			local ang = v[4]%360
 			cmdstr[cmdstr.state] = {x=v[1], z=v[3], ang=ang, rad=math.rad(ang)}
 			if cmdstr.state == 1 then
-				originx = v[1]
-				originz = v[3]
+				--originx = v[1]
+				--originz = v[3]
+				linestate = "first"
+			else
+				linestate = "second"
 			end
 
 			cmdstr.state = cmdstr.state + 1
 		end
-	elseif k == "up" then    lm.setY(lm.getY() - 1)
-	elseif k == "down" then  lm.setY(lm.getY() + 1)
-	elseif k == "left" then  lm.setX(lm.getX() - 1)
-	elseif k == "right" then lm.setX(lm.getX() + 1)
+	elseif k == "up" then    lm.setY(lm.getY() - math.max(16*(zoom-1),1))
+	elseif k == "down" then  lm.setY(lm.getY() + math.max(16*(zoom-1),1))
+	elseif k == "left" then  lm.setX(lm.getX() - math.max(16*(zoom-1),1))
+	elseif k == "right" then lm.setX(lm.getX() + math.max(16*(zoom-1),1))
 	elseif k == "`" then
 		le.quit("restart")
 	elseif k == "escape" then
@@ -204,4 +234,21 @@ end
 
 function love.wheelmoved(x, y)
 	zoom = math.max(zoom + y/2, 1)
+end
+
+function love.mousepressed(x, y, b)
+	if b == 1 then
+		if linestate == "second" then
+			originx = math.floor((lm.getX()-sysW/2)/zoom-camerax)
+			originz = math.floor((lm.getY()-sysH/2)/zoom-cameray)
+		end
+	end
+end
+
+function love.mousereleased(x, y, b)
+	if b == 1 then
+		if linestate ~= "none" then
+			linestate = "none"
+		end
+	end
 end
