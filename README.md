@@ -1,6 +1,8 @@
 # StrongVis - MC Stronghold Visualizer [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/notquiteapex)
 Draw angles given from Eyes of Ender and F3+C to get a good idea of where the stronghold may be.
 
+Made with [LÖVE](https://love2d.org/). To run source, open the cloned repo with the LÖVE executable.
+
 # Usage
 Let's get familiar with the UI. There's a lot here, so lemme try to talk it out by color. White text is just general info, like controls and cursor info. Green lines point to the origin, where you throw the first Eye of Ender. Red lines are every 10 chunks. Dark blue lines are chunk outlines, pink dots are the centers of chunks (where Eyes of Ender point to). Yellow numbers are the number of horizontal chunks in a direction, Cyan numbers are the same but vertical.
 
