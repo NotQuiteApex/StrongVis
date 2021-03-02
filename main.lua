@@ -126,8 +126,6 @@ function love.update(dt)
 		local my = (lm.getY()-sysH/2)/zoom-cameray
 		local mang = math.atan2(-mx+originx, my-originz) + math.pi/2
 
-		print(my-originz, mang, linestate)
-
 		if not lines[linestate] then lines[linestate] = {} end
 		lines[linestate].x = mx
 		lines[linestate].z = my
@@ -170,7 +168,7 @@ function love.draw()
 		if k == "first" then
 			x, y = -0.5, -0.5
 		else
-			x, y = originx+0.5,originz+0.5 --lines[k].x, lines[k].z
+			x, y = originx,originz --lines[k].x, lines[k].z
 		end
 		lg.line(x, y, x+raylen*math.cos(lines[k].rad), y+raylen*math.sin(lines[k].rad))
 	end
@@ -311,15 +309,15 @@ function love.keypressed(k)
 	elseif k == "z" and lk.isDown("lctrl","rctrl") then
 		-- undo last paste and line.
 		if linestate == "second" or #lines == 2 or #cmdstr == 2 then
-			originx = 0
-			originz = 0
+			originx = -0.5
+			originz = -0.5
 			linestate = "none"
 			lines["second"] = nil --table.remove(lines, "second")
 			cmdstr.state = 2
 			table.remove(cmdstr, 2)
 		elseif linestate == "first" or #lines == 1 or #cmdstr == 1 then
-			originx = 0
-			originz = 0
+			originx = -0.5
+			originz = -0.5
 			linestate = "none"
 			lines["first"] = nil --table.remove(lines, "first")
 			cmdstr.state = 1
@@ -353,7 +351,11 @@ function love.mousemoved(x,y, dx,dy, istouch)
 end
 
 function love.wheelmoved(x, y)
+	local oldzoom = zoom
 	zoom = math.max(zoom + y, 1)
+
+	camerax = ((lm.getX()-sysW/2)/zoom - (lm.getX()-sysW/2)/oldzoom) + camerax
+	cameray = ((lm.getY()-sysH/2)/zoom - (lm.getY()-sysH/2)/oldzoom) + cameray
 
 	lg.setLineWidth(1/zoom)
 end
@@ -361,8 +363,8 @@ end
 function love.mousepressed(x, y, b)
 	if b == 1 then
 		if linestate == "second" then
-			originx = math.floor((lm.getX()-sysW/2)/zoom-camerax)
-			originz = math.floor((lm.getY()-sysH/2)/zoom-cameray)
+			originx = math.floor((lm.getX()-sysW/2)/zoom-camerax) + 0.5
+			originz = math.floor((lm.getY()-sysH/2)/zoom-cameray) + 0.5
 			hasdrawnsecond = true
 		end
 	end
@@ -373,6 +375,8 @@ function love.mousereleased(x, y, b)
 		if linestate ~= "none" then
 			if linestate == "second" then
 				zoom = 1
+				camerax = math.floor(camerax)
+				cameray = math.floor(cameray)
 			end
 			linestate = "none"
 		end
