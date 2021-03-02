@@ -1,6 +1,7 @@
 -- StrongholdVisualizer, visualizes directions of where a stronghold in Minecraft
 
 -- NOTES:
+-- `/execute in minecraft:overworld run tp @s -1220.22 36.00 -923.30 554.61 38.27`
 -- `/execute in minecraft:overworld run tp @s -1220.22 36.00 -923.30 176.60 38.27`
 -- `/execute in minecraft:overworld run tp @s -1220.22 36.00 -1000.00 0.00 38.27`
 -- X, Y, Z, Yaw, Pitch (ignore Y and Pitch, only use X, Z, Yaw)
@@ -53,9 +54,8 @@ function love.load()
 	canvhalf = canvsize/2
 
 	linestate = "none" -- "none", "first", "second"
-	lines = {
-
-	}
+	lines = {}
+	hasdrawnsecond = false
 
 	lg.setDefaultFilter("linear", "nearest")
 	canv = lg.newCanvas(canvsize, canvsize)
@@ -135,13 +135,13 @@ function love.draw()
 	for i,v in ipairs(cmdstr) do
 		if i == 1 then
 			x, y = -0.5,-0.5
-		elseif k == "second" then
+		elseif hasdrawnsecond then
 			x, y = originx+0.5,originz+0.5
 		else
 			break
 		end
-		lg.circle("line", x+200*math.sin(v.rad), y-200*math.cos(v.rad), 4)
-		lg.circle("line", x+200*math.sin(v.rad), y-200*math.cos(v.rad), 1/zoom)
+		lg.circle("line", x+200*math.cos(v.rad+math.pi/2), y+200*math.sin(v.rad+math.pi/2), 4)
+		lg.circle("line", x+200*math.cos(v.rad+math.pi/2), y+200*math.sin(v.rad+math.pi/2), 2/zoom)
 	end
 
 	lg.setColor(1,1,1)
@@ -202,9 +202,13 @@ function love.draw()
 	lg.setScissor()
 
 	lg.setColor(0,0,0, 0.75)
-	lg.rectangle("fill", 0, 60, 110, 120)
-	lg.rectangle("fill", 0, 0, 260, 16*(#cmdstr+1))
-	lg.rectangle("fill", sysW-170, sysH-100, 170,100)
+	lg.rectangle("fill", 0, 60, 110, 120) -- coords and angle
+	lg.rectangle("fill", 0, 0, 260, 16*(#cmdstr+1)) -- fps & cmdstr
+	lg.rectangle("fill", sysW-170, sysH-100, 170,100) -- controls
+	lg.rectangle("fill", 0, sysH/2-8, 58,16) -- west
+	lg.rectangle("fill", sysW-58, sysH/2-8, 58,16) -- east
+	lg.rectangle("fill", sysW/2-fnt:getWidth("North (-Z)")/2, 0, fnt:getWidth("North (-Z)"), 16)
+	lg.rectangle("fill", sysW/2-fnt:getWidth("South (+Z)")/2, sysH-16, fnt:getWidth("South (+Z)"), 16)
 
 	lg.setColor(1,1,1)
 
@@ -221,8 +225,17 @@ function love.draw()
 	lg.print(("OriginX: %.1f"):format(originx), 0, 112)
 	lg.print(("OriginY: %.1f"):format(originz), 0, 128)
 
-	lg.print(("Chunk X: %d"):format(math.floor(mx/16)), 0, 144+6)
-	lg.print(("Chunk Y: %d"):format(math.floor(my/16)), 0, 160+6)
+	local cx, cy = math.floor(mx / 16), math.floor(my / 16)
+	if cx < 0 then cx = cx + 1 end
+	if cy < 0 then cy = cy + 1 end
+	lg.print(("Chunk X: %d"):format(cx), 0, 144+6)
+	lg.print(("Chunk Z: %d"):format(cy), 0, 160+6)
+
+	lg.setColor(1, 0.25, 1)
+	lg.print("West (-X)", 0, sysH/2-8)
+	lg.print("East (+X)", sysW-58, sysH/2-8)
+	lg.print("North (-Z)", sysW/2-fnt:getWidth("North (-Z)")/2, 0)
+	lg.print("South (+Z)", sysW/2-fnt:getWidth("South (+Z)")/2, sysH-16)
 
 	lg.setColor(1,1,1)
 	lg.printf(controlsstr, sysW-2, sysH-1, sysW, "right", 0, 1, 1, sysW, 96)
@@ -255,10 +268,10 @@ function love.keypressed(k)
 				return -- error, not enough numbers
 			end
 
-			v[4] = v[4] + 180
 			-- normalize angle between -180 and 180
-			local ang = v[4] - 180 * math.floor((v[4] + 180) / 180);
-			cmdstr[cmdstr.state] = {x=v[1], z=v[3], ang=v[4]-180, rad=math.rad(ang)}
+			local ang = v[4]
+			if ang >= 180 or ang <= -180 then ang = v[4] - 180 * math.floor((v[4] + 180) / 180) end
+			cmdstr[cmdstr.state] = {x=v[1], z=v[3], ang=v[4], rad=math.rad(ang)}
 			if cmdstr.state == 1 then
 				--originx = v[1]
 				--originz = v[3]
@@ -322,6 +335,7 @@ function love.mousepressed(x, y, b)
 		if linestate == "second" then
 			originx = math.floor((lm.getX()-sysW/2)/zoom-camerax)
 			originz = math.floor((lm.getY()-sysH/2)/zoom-cameray)
+			hasdrawnsecond = true
 			print(originx, originz)
 		end
 	end
