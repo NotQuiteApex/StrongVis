@@ -1,13 +1,13 @@
--- FourCalc, calculator for Four's MC Speedruns
+-- StrongholdVisualizer, visualizes directions of where a stronghold in Minecraft
 
 -- NOTES:
--- `/execute in minecraft:overworld run tp @s -1220.22 36.00 -923.30 -10076.11 38.27`
+-- `/execute in minecraft:overworld run tp @s -1220.22 36.00 -923.30 176.60 38.27`
 -- `/execute in minecraft:overworld run tp @s -1220.22 36.00 -1000.00 0.00 38.27`
 -- X, Y, Z, Yaw, Pitch (ignore Y and Pitch, only use X, Z, Yaw)
 -- South: +Z (0 deg)
 -- North: -Z (180/-180 deg)
--- West:  -X (-90 deg)
--- East:  +X (90 deg)
+-- West:  -X (90 deg)
+-- East:  +X (-90 deg)
 
 -- TODO:
 -- Dot to guide line instead of angle
@@ -119,7 +119,7 @@ function love.draw()
 
 	local mx = (lm.getX()-sysW/2)/zoom-camerax
 	local my = (lm.getY()-sysH/2)/zoom-cameray
-	local mang = math.atan2(mx-originx, my-originz)
+	local mang = math.atan2(-mx+originx, my-originz)
 
 	lg.setScissor(0,0, sysW, sysH)
 
@@ -130,16 +130,31 @@ function love.draw()
 
 	lg.draw(canv, -canvhalf, -canvhalf)
 
+	lg.setColor(1, 0, 1)
+	local x,y, a,b
+	for i,v in ipairs(cmdstr) do
+		if i == 1 then
+			x, y = -0.5,-0.5
+		elseif k == "second" then
+			x, y = originx+0.5,originz+0.5
+		else
+			break
+		end
+		lg.circle("line", x+200*math.sin(v.rad), y-200*math.cos(v.rad), 4)
+		lg.circle("line", x+200*math.sin(v.rad), y-200*math.cos(v.rad), 1/zoom)
+	end
+
+	lg.setColor(1,1,1)
 	local x,y, a,b
 	for k,v in pairs(lines) do
 		if k == "first" then
 			x, y = -0.5,-0.5
 			a, b = 0, 0
 		else
-			x, y = originx,originz --lines[k].x, lines[k].z
-			a, b = x, y
+			x, y = originx+0.5,originz+0.5 --lines[k].x, lines[k].z
+			a, b = x-0.5, y-0.5
 		end
-		lg.line(x, y, a+5000*math.cos(lines[k].rad), b+5000*math.sin(lines[k].rad))
+		lg.line(x, y, a+2500*math.cos(lines[k].rad), b+2500*math.sin(lines[k].rad))
 	end
 
 	local xcoord, ycoord
@@ -186,6 +201,13 @@ function love.draw()
 
 	lg.setScissor()
 
+	lg.setColor(0,0,0, 0.75)
+	lg.rectangle("fill", 0, 60, 110, 120)
+	lg.rectangle("fill", 0, 0, 260, 16*(#cmdstr+1))
+	lg.rectangle("fill", sysW-170, sysH-100, 170,100)
+
+	lg.setColor(1,1,1)
+
 	for i=1,2 do
 		if cmdstr[i] then
 			local str = "{ x=%.2f, z=%.2f, ang=%.2f }"
@@ -199,8 +221,11 @@ function love.draw()
 	lg.print(("OriginX: %.1f"):format(originx), 0, 112)
 	lg.print(("OriginY: %.1f"):format(originz), 0, 128)
 
+	lg.print(("Chunk X: %d"):format(math.floor(mx/16)), 0, 144+6)
+	lg.print(("Chunk Y: %d"):format(math.floor(my/16)), 0, 160+6)
+
 	lg.setColor(1,1,1)
-	lg.printf(controlsstr, sysW-2, sysH, sysW, "right", 0, 1, 1, sysW, 96)
+	lg.printf(controlsstr, sysW-2, sysH-1, sysW, "right", 0, 1, 1, sysW, 96)
 
 	lg.print("fps:"..lt.getFPS(), 0,0)
 
@@ -233,12 +258,15 @@ function love.keypressed(k)
 			v[4] = v[4] + 180
 			-- normalize angle between -180 and 180
 			local ang = v[4] - 180 * math.floor((v[4] + 180) / 180);
-			cmdstr[cmdstr.state] = {x=v[1], z=v[3], ang=ang, rad=math.rad(ang)}
+			cmdstr[cmdstr.state] = {x=v[1], z=v[3], ang=v[4]-180, rad=math.rad(ang)}
 			if cmdstr.state == 1 then
 				--originx = v[1]
 				--originz = v[3]
 				linestate = "first"
 			else
+				camerax = 0
+				cameray = 0
+				zoom = 1
 				linestate = "second"
 			end
 
@@ -262,10 +290,10 @@ function love.keypressed(k)
 			table.remove(cmdstr, 1)
 		end
 
-	elseif k == "up" then    lm.setY(lm.getY() - math.max(16*(zoom-1),1))
-	elseif k == "down" then  lm.setY(lm.getY() + math.max(16*(zoom-1),1))
-	elseif k == "left" then  lm.setX(lm.getX() - math.max(16*(zoom-1),1))
-	elseif k == "right" then lm.setX(lm.getX() + math.max(16*(zoom-1),1))
+	elseif k == "up" then    lm.setY(lm.getY() - 2)
+	elseif k == "down" then  lm.setY(lm.getY() + 2)
+	elseif k == "left" then  lm.setX(lm.getX() - 2)
+	elseif k == "right" then lm.setX(lm.getX() + 2)
 	elseif k == "`" then
 		le.quit("restart")
 	elseif k == "escape" then
@@ -294,6 +322,7 @@ function love.mousepressed(x, y, b)
 		if linestate == "second" then
 			originx = math.floor((lm.getX()-sysW/2)/zoom-camerax)
 			originz = math.floor((lm.getY()-sysH/2)/zoom-cameray)
+			print(originx, originz)
 		end
 	end
 end
