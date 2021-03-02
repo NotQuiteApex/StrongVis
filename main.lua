@@ -155,7 +155,7 @@ function love.draw()
 		if i == 1 then
 			x, y = -0.5,-0.5
 		elseif hasdrawnsecond then
-			x, y = originx+0.5,originz+0.5
+			x, y = originx,originz
 		else
 			break
 		end
@@ -373,6 +373,13 @@ end
 function love.mousereleased(x, y, b)
 	if b == 1 then
 		if linestate ~= "none" then
+
+			local mx = (lm.getX()-sysW/2)/zoom-camerax
+			local my = (lm.getY()-sysH/2)/zoom-cameray
+			local mang = math.atan2(-mx+originx, my-originz) + math.pi/2
+
+			print(math.deg(mang))
+
 			if linestate == "second" then
 				zoom = 1
 				camerax = math.floor(camerax)
