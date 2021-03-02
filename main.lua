@@ -41,6 +41,7 @@ local lm = love.mouse
 local ls = love.system
 local lt = love.timer
 
+local controlsstroffset = 128
 local controlsstr = [[Controls:
 Arrow keys to move cursor
 Mouse 2 to pan view
@@ -49,6 +50,7 @@ MouseWheel to zoom
 Escape to exit
 Ctrl+Z to undo last line
 Ctrl+V to paste MC's F3+C
+R to recenter view
 ]]
 
 function love.load()
@@ -221,7 +223,7 @@ function love.draw()
 	lg.setColor(0,0,0, 0.75)
 	lg.rectangle("fill", 0, 60, 110, 120) -- coords and angle
 	lg.rectangle("fill", 0, 0, 260, 16*(#cmdstr+1)) -- fps & cmdstr
-	lg.rectangle("fill", sysW-170, sysH-100, 170,100) -- controls
+	lg.rectangle("fill", sysW-170, sysH-controlsstroffset, 170,controlsstroffset) -- controls
 	lg.rectangle("fill", 0, sysH/2-8, 58,16) -- west
 	lg.rectangle("fill", sysW-58, sysH/2-8, 58,16) -- east
 	lg.rectangle("fill", sysW/2-fnt:getWidth("North (-Z)")/2, 0, fnt:getWidth("North (-Z)"), 16)
@@ -255,7 +257,7 @@ function love.draw()
 	lg.print("South (+Z)", sysW/2-fnt:getWidth("South (+Z)")/2, sysH-16)
 
 	lg.setColor(1,1,1)
-	lg.printf(controlsstr, sysW-2, sysH-1, sysW, "right", 0, 1, 1, sysW, 96)
+	lg.printf(controlsstr, sysW-2, sysH-1, sysW, "right", 0, 1, 1, sysW, controlsstroffset)
 
 	lg.print("fps:"..lt.getFPS(), 0,0)
 
