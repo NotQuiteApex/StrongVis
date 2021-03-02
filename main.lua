@@ -24,18 +24,13 @@ the following restrictions:
 
 -- NOTES:
 -- `/execute in minecraft:overworld run tp @s -1220.22 36.00 -923.30 554.61 38.27`
--- `/execute in minecraft:overworld run tp @s -1220.22 36.00 -923.30 176.60 38.27`
+-- `/execute in minecraft:overworld run tp @s -1220.22 36.00 -923.30 -188.60 38.27`
 -- `/execute in minecraft:overworld run tp @s -1220.22 36.00 -1000.00 0.00 38.27`
 -- X, Y, Z, Yaw, Pitch (ignore Y and Pitch, only use X, Z, Yaw)
 -- South: +Z (0 deg)
 -- North: -Z (180/-180 deg)
 -- West:  -X (90 deg)
 -- East:  +X (-90 deg)
-
--- TODO:
--- Dot to guide line instead of angle
--- chunk coords on pink Dot on click
--- 
 
 io.stdout:setvbuf("no")
 
@@ -71,7 +66,7 @@ function love.load()
 	originx = 0
 	originz = 0
 
-	tilenum = 250 -- MUST be divisible by 10.
+	tilenum = 450 -- MUST be divisible by 10.
 	canvsize = tilenum*16
 	canvhalf = canvsize/2
 
@@ -174,7 +169,7 @@ function love.draw()
 			a, b = 0, 0
 		else
 			x, y = originx+0.5,originz+0.5 --lines[k].x, lines[k].z
-			a, b = x-0.5, y-0.5
+			a, b = x, y
 		end
 		lg.line(x, y, a+2500*math.cos(lines[k].rad), b+2500*math.sin(lines[k].rad))
 	end
@@ -292,7 +287,12 @@ function love.keypressed(k)
 
 			-- normalize angle between -180 and 180
 			local ang = v[4]
-			if ang >= 180 or ang <= -180 then ang = v[4] - 180 * math.floor((v[4] + 180) / 180) end
+			if ang >= 180 then
+				ang = v[4] - 180 * math.floor((v[4] + 180) / 180)
+			elseif ang <= -180 then
+				ang = v[4] + 180 * math.floor((v[4] + 180) / 180) + 180
+			end
+			print(v[4], 180 * math.floor((v[4] + 180) / 180))
 			cmdstr[cmdstr.state] = {x=v[1], z=v[3], ang=v[4], rad=math.rad(ang)}
 			if cmdstr.state == 1 then
 				--originx = v[1]
@@ -324,7 +324,10 @@ function love.keypressed(k)
 			cmdstr.state = 1
 			table.remove(cmdstr, 1)
 		end
-
+	elseif k == "r" then
+		camerax = 0
+		cameray = 0
+		zoom = 1
 	elseif k == "up" then    lm.setY(lm.getY() - 2)
 	elseif k == "down" then  lm.setY(lm.getY() + 2)
 	elseif k == "left" then  lm.setX(lm.getX() - 2)
@@ -349,7 +352,7 @@ function love.mousemoved(x,y, dx,dy, istouch)
 end
 
 function love.wheelmoved(x, y)
-	zoom = math.max(zoom + y/2, 1)
+	zoom = math.max(zoom + y, 1)
 end
 
 function love.mousepressed(x, y, b)
@@ -366,6 +369,9 @@ end
 function love.mousereleased(x, y, b)
 	if b == 1 then
 		if linestate ~= "none" then
+			if linestate == "second" then
+				zoom = 1
+			end
 			linestate = "none"
 		end
 	end
