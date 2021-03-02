@@ -65,15 +65,17 @@ function love.load()
 	cameray = 0
 	zoom = 1
 
-	originx = 0
-	originz = 0
+	originx = -0.5
+	originz = -0.5
 
 	tilenum = 450 -- MUST be divisible by 10.
+	raylen = tilenum * 10 * math.sqrt(2) + 50
 	canvsize = tilenum*16
 	canvhalf = canvsize/2
 
 	linestate = "none" -- "none", "first", "second"
 	lines = {}
+	hasdrawnfirst = false
 	hasdrawnsecond = false
 
 	lg.setDefaultFilter("linear", "nearest")
@@ -119,12 +121,12 @@ function love.load()
 end
 
 function love.update(dt)
-	lg.setLineWidth(1/zoom)
-
 	if linestate ~= "none" and lm.isDown(1) then
 		local mx = (lm.getX()-sysW/2)/zoom-camerax
 		local my = (lm.getY()-sysH/2)/zoom-cameray
-		local mang = math.atan2(my-originz, mx-originx)
+		local mang = math.atan2(-mx+originx, my-originz) + math.pi/2
+
+		print(my-originz, mang, linestate)
 
 		if not lines[linestate] then lines[linestate] = {} end
 		lines[linestate].x = mx
@@ -159,21 +161,18 @@ function love.draw()
 		else
 			break
 		end
-		lg.circle("line", x+200*math.cos(v.rad+math.pi/2), y+200*math.sin(v.rad+math.pi/2), 4)
-		lg.circle("line", x+200*math.cos(v.rad+math.pi/2), y+200*math.sin(v.rad+math.pi/2), 2/zoom)
+		lg.circle("line", x+200*math.cos(v.rad), y+200*math.sin(v.rad), 4)
+		lg.circle("line", x+200*math.cos(v.rad), y+200*math.sin(v.rad), 2/zoom)
 	end
 
 	lg.setColor(1,1,1)
-	local x,y, a,b
 	for k,v in pairs(lines) do
 		if k == "first" then
-			x, y = -0.5,-0.5
-			a, b = 0, 0
+			x, y = -0.5, -0.5
 		else
 			x, y = originx+0.5,originz+0.5 --lines[k].x, lines[k].z
-			a, b = x, y
 		end
-		lg.line(x, y, a+2500*math.cos(lines[k].rad), b+2500*math.sin(lines[k].rad))
+		lg.line(x, y, x+raylen*math.cos(lines[k].rad), y+raylen*math.sin(lines[k].rad))
 	end
 
 	local xcoord, ycoord
@@ -295,7 +294,7 @@ function love.keypressed(k)
 				ang = v[4] + 180 * math.floor((v[4] + 180) / 180) + 180
 			end
 			print(v[4], 180 * math.floor((v[4] + 180) / 180))
-			cmdstr[cmdstr.state] = {x=v[1], z=v[3], ang=v[4], rad=math.rad(ang)}
+			cmdstr[cmdstr.state] = {x=v[1], z=v[3], ang=v[4], rad=math.rad(ang)+math.pi/2}
 			if cmdstr.state == 1 then
 				--originx = v[1]
 				--originz = v[3]
@@ -355,6 +354,8 @@ end
 
 function love.wheelmoved(x, y)
 	zoom = math.max(zoom + y, 1)
+
+	lg.setLineWidth(1/zoom)
 end
 
 function love.mousepressed(x, y, b)
@@ -363,7 +364,6 @@ function love.mousepressed(x, y, b)
 			originx = math.floor((lm.getX()-sysW/2)/zoom-camerax)
 			originz = math.floor((lm.getY()-sysH/2)/zoom-cameray)
 			hasdrawnsecond = true
-			print(originx, originz)
 		end
 	end
 end
