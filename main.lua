@@ -64,6 +64,7 @@ function love.load()
 	camerax = 0
 	cameray = 0
 	zoom = 1
+	zoomfac = 0
 
 	originx = -0.5
 	originz = -0.5
@@ -174,15 +175,16 @@ function love.draw()
 	end
 
 	local xcoord, ycoord
+	local fntscale = math.max(1/zoom,1)
 	lg.setColor(0, 1, 1)
 	for y = 0, tilenum/10-1 do
 		local ystr = (y-(tilenum/10-1)/2)*10
 		local w, h = fnt:getWidth(ystr), fnt:getHeight(ystr)
-		ycoord = -canvhalf + y*10*16+4.5*16
+		ycoord = -canvhalf + y*10*16+4.5*16+8
 		if -ycoord >= cameray - sysH/2/zoom and -ycoord <= cameray + sysH/2/zoom then
 			for x = 0, tilenum/10 do
 				xcoord = -canvhalf + x*10*16
-				lg.print(ystr, xcoord, ycoord, 0, 1,1, w/2)
+				lg.print(ystr, xcoord, ycoord, 0, fntscale,fntscale, w/2, 8)
 			end
 		end
 	end
@@ -193,15 +195,15 @@ function love.draw()
 		xcoord = -canvhalf + (x-1)*10*16+15*16
 		if -xcoord >= camerax - sysW/2/zoom and -xcoord <= camerax + sysW/2/zoom then
 			for y = 0, tilenum/10 do
-				ycoord = -canvhalf + y*10*16-8
-				lg.print(xstr, xcoord, ycoord, 0, 1,1, w/2)
+				ycoord = -canvhalf + y*10*16
+				lg.print(xstr, xcoord, ycoord, 0, fntscale,fntscale, w/2, 8)
 			end
 		end
 	end
 
 	lg.setColor(1,1,1, 0.25)
 
-	if zoom >= 5 then
+	if zoom >= 8 then
 		for y = 0, sysH/zoom+1 do
 			for x = 0, sysW/zoom+1 do
 				lg.rectangle("line", math.floor(-camerax + x-sysW/zoom/2), math.floor(-cameray + y-sysH/zoom/2), 1,1)
@@ -300,7 +302,9 @@ function love.keypressed(k)
 			else
 				camerax = 0
 				cameray = 0
-				zoom = 1
+				zoomfac = 0
+				zoom = 1/(1.1^zoomfac)
+				lg.setLineWidth(1/zoom)
 				linestate = "second"
 			end
 
@@ -326,7 +330,9 @@ function love.keypressed(k)
 	elseif k == "r" then
 		camerax = 0
 		cameray = 0
-		zoom = 1
+		zoomfac = 0
+		zoom = 1/(1.1^zoomfac)
+		lg.setLineWidth(1/zoom)
 	elseif k == "up" then    lm.setY(lm.getY() - 2)
 	elseif k == "down" then  lm.setY(lm.getY() + 2)
 	elseif k == "left" then  lm.setX(lm.getX() - 2)
@@ -351,8 +357,11 @@ function love.mousemoved(x,y, dx,dy, istouch)
 end
 
 function love.wheelmoved(x, y)
-	local oldzoom = zoom
-	zoom = math.max(zoom + y, 1)
+	local oldzoom = 1/(1.1^zoomfac)
+	zoomfac = clamp(zoomfac - y*2, -36, 10)
+	zoom = 1/(1.1^zoomfac)
+
+	print(zoomfac)
 
 	camerax = ((lm.getX()-sysW/2)/zoom - (lm.getX()-sysW/2)/oldzoom) + camerax
 	cameray = ((lm.getY()-sysH/2)/zoom - (lm.getY()-sysH/2)/oldzoom) + cameray
@@ -367,24 +376,32 @@ function love.mousepressed(x, y, b)
 			originz = math.floor((lm.getY()-sysH/2)/zoom-cameray) + 0.5
 			hasdrawnsecond = true
 		end
+
+		if linestate ~= "none" then
+			local i = #cmdstr
+			local v = cmdstr[i]
+			local x,y
+			if i == 1 then
+				x, y = -0.5,-0.5
+			elseif hasdrawnsecond then
+				x, y = originx,originz
+			else
+				return
+			end
+
+			camerax = -math.floor(200*math.cos(v.rad))
+			cameray = -math.floor(200*math.sin(v.rad))
+			zoomfac = -36
+			zoom = 1/(1.1^zoomfac)
+
+			lg.setLineWidth(1/zoom)
+		end
 	end
 end
 
 function love.mousereleased(x, y, b)
 	if b == 1 then
 		if linestate ~= "none" then
-
-			local mx = (lm.getX()-sysW/2)/zoom-camerax
-			local my = (lm.getY()-sysH/2)/zoom-cameray
-			local mang = math.atan2(-mx+originx, my-originz) + math.pi/2
-
-			print(math.deg(mang))
-
-			if linestate == "second" then
-				zoom = 1
-				camerax = math.floor(camerax)
-				cameray = math.floor(cameray)
-			end
 			linestate = "none"
 		end
 	end
@@ -392,4 +409,8 @@ end
 
 function sign(x)
 	return x < 0 and -1 or 1
+end
+
+function clamp(x, min, max)
+	return x < min and min or (x > max and max or x)
 end
