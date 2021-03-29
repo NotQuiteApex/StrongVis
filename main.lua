@@ -288,10 +288,12 @@ function love.keypressed(k)
 
 			-- normalize angle between -180 and 180
 			local ang = v[4]
+			ang = ang % 360
 			if ang >= 180 then
-				ang = v[4] - 180 * math.floor((v[4] + 180) / 180)
-			elseif ang <= -180 then
-				ang = v[4] + 180 * math.floor((v[4] + 180) / 180) + 180
+				ang = ang - 360
+			end
+			if ang <- 180 then 
+				ang = ang + 360
 			end
 			print(v[4], 180 * math.floor((v[4] + 180) / 180))
 			cmdstr[cmdstr.state] = {x=v[1], z=v[3], ang=v[4], rad=math.rad(ang)+math.pi/2}
@@ -388,9 +390,13 @@ function love.mousepressed(x, y, b)
 			else
 				return
 			end
-
-			camerax = -math.floor(200*math.cos(v.rad))
-			cameray = -math.floor(200*math.sin(v.rad))
+			if i == 1 then
+				camerax = -math.floor(200*math.cos(v.rad))
+				cameray = -math.floor(200*math.sin(v.rad))
+			elseif hasdrawnsecond then
+				camerax = -math.floor(200*math.cos(v.rad)) - originx
+				cameray = -math.floor(200*math.sin(v.rad)) - originz
+			end
 			zoomfac = -36
 			zoom = 1/(1.1^zoomfac)
 
